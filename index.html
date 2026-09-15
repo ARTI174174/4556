@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FileShare — обмен файлами</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ЭКРАН: МЕНЮ -->
+    <div id="screen-menu" class="screen active">
+      <div class="card center">
+        <h1>📁 FileShare</h1>
+        <p class="sub">Простой обмен файлами между устройствами</p>
+        <button class="btn primary" onclick="showScreen('screen-login')">Войти</button>
+        <button class="btn" onclick="showScreen('screen-register')">Регистрация</button>
+      </div>
+    </div>
+
+    <!-- ЭКРАН: РЕГИСТРАЦИЯ -->
+    <div id="screen-register" class="screen">
+      <div class="card">
+        <h2>Регистрация</h2>
+        <input id="reg-login" type="text" placeholder="Логин (только английские буквы)" />
+        <input id="reg-pass" type="password" placeholder="Пароль (от 5 символов)" />
+        <button class="btn primary" onclick="register()">Создать аккаунт</button>
+        <button class="btn link" onclick="showScreen('screen-menu')">← Назад</button>
+        <p id="reg-error" class="error"></p>
+      </div>
+    </div>
+
+    <!-- ЭКРАН: ВХОД -->
+    <div id="screen-login" class="screen">
+      <div class="card">
+        <h2>Вход</h2>
+        <input id="log-login" type="text" placeholder="Логин" />
+        <input id="log-pass" type="password" placeholder="Пароль" />
+        <button class="btn primary" onclick="login()">Войти</button>
+        <button class="btn link" onclick="showScreen('screen-menu')">← Назад</button>
+        <p id="log-error" class="error"></p>
+      </div>
+    </div>
+
+    <!-- ЭКРАН: ЧАТ -->
+    <div id="screen-chat" class="screen">
+      <header class="topbar">
+        <span>💬 Общий чат</span>
+        <span id="user-label" class="user"></span>
+        <button class="btn small" onclick="logout()">Выйти</button>
+      </header>
+
+      <div class="upload-panel">
+        <input type="file" id="file-input" hidden />
+        <button class="btn" onclick="document.getElementById('file-input').click()">📎 Выбрать файл</button>
+        <span id="file-name" class="file-name">Файл не выбран</span>
+        <select id="ttl">
+          <option value="5">Удалить через 5 мин</option>
+          <option value="10">10 минут</option>
+          <option value="30">30 минут</option>
+          <option value="60" selected>1 час</option>
+        </select>
+        <button class="btn primary" onclick="uploadFile()">Загрузить</button>
+      </div>
+
+      <div id="files-list" class="files-list"></div>
+    </div>
+
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
