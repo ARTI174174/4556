@@ -5,10 +5,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, collection, addDoc, onSnapshot, deleteDoc,
-  doc, serverTimestamp, query, orderBy
+  doc, serverTimestamp, query, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ======== 1. ВСТАВЬ СВОИ КЛЮЧИ FIREBASE ЗДЕСЬ ======== */
+/* ======== ТВОИ КЛЮЧИ FIREBASE ======== */
 const firebaseConfig = {
   apiKey: "AIzaSyAkfRcVP8sTq83GbsEvVePiEpOTal3I5V4",
   authDomain: "fileshare-cb7be.firebaseapp.com",
@@ -17,7 +17,7 @@ const firebaseConfig = {
   messagingSenderId: "292926562182",
   appId: "1:292926562182:web:ad5db5b102275acf849607"
 };
-/* ====================================================== */
+/* ===================================== */
 
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -31,10 +31,16 @@ window.showScreen = (id) => {
   document.getElementById("log-error").textContent = "";
 };
 
-let currentFile = null;
+/* ====== Файлы (выбор) ====== */
+let currentFiles = [];
 document.getElementById("file-input").addEventListener("change", e => {
-  currentFile = e.target.files[0];
-  document.getElementById("file-name").textContent = currentFile ? currentFile.name : "Файл не выбран";
+  currentFiles = Array.from(e.target.files).slice(0, 10);  // максимум 10
+  const total = Array.from(e.target.files).length;
+  const shown = currentFiles.length;
+  document.getElementById("file-name").textContent =
+    shown === 0 ? "Файлы не выбраны" :
+    total > 10 ? `Выбрано ${shown} из ${total} (лимит 10)` :
+    `Выбрано: ${shown} файл(ов)`;
 });
 
 /* ====== Регистрация ====== */
@@ -74,7 +80,6 @@ window.login = async () => {
   }
 };
 
-/* ====== Выход ====== */
 window.logout = () => signOut(auth);
 
 /* ====== Авторизация ====== */
@@ -84,53 +89,65 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("user-label").textContent = "👤 " + login;
     showScreen("screen-chat");
     listenFiles();
+    listenMessages();
   } else {
     showScreen("screen-menu");
   }
 });
 
-/* ====== Загрузка файла (в Firestore как base64) ====== */
-window.uploadFile = async () => {
-  if (!currentFile) { alert("Выбери файл"); return; }
-  if (currentFile.size > 900 * 1024) {
-    alert("Файл больше 900 КБ. Пока что можно только маленькие файлы (ограничение бесплатного Firestore).");
-    return;
-  }
+/* ====== Загрузка файлов (до 10 сразу) ====== */
+window.uploadFiles = async () => {
+  if (currentFiles.length === 0) { alert("Выбери файлы"); return; }
   const minutes = parseInt(document.getElementById("ttl").value, 10);
   const user = auth.currentUser;
   if (!user) return;
   const login = user.email.split("@")[0];
 
-  // читаем файл в base64
-  const reader = new FileReader();
-  reader.onload = async (e) => {
+  let okCount = 0, skipCount = 0;
+
+  for (const f of currentFiles) {
+    if (f.size > 900 * 1024) { skipCount++; continue; }
     try {
+      const base64 = await fileToBase64(f);
       await addDoc(collection(db, "files"), {
-        name: currentFile.name,
-        type: currentFile.type,
-        size: currentFile.size,
-        data: e.target.result,  // base64 строка
+        name: f.name,
+        type: f.type,
+        size: f.size,
+        data: base64,
         login,
         expiresAt: Date.now() + minutes * 60 * 1000,
         createdAt: serverTimestamp()
       });
-
-      currentFile = null;
-      document.getElementById("file-name").textContent = "Файл не выбран";
-      document.getElementById("file-input").value = "";
-    } catch (err) {
-      alert("Ошибка загрузки: " + err.message);
+      okCount++;
+    } catch (e) {
+      skipCount++;
     }
-  };
-  reader.readAsDataURL(currentFile);
+  }
+
+  currentFiles = [];
+  document.getElementById("file-name").textContent = "Файлы не выбраны";
+  document.getElementById("file-input").value = "";
+
+  if (skipCount > 0) {
+    alert(`Загружено: ${okCount}\nПропущено (больше 900 КБ или ошибка): ${skipCount}`);
+  }
 };
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
 /* ====== Список файлов ====== */
-let unsubscribe = null;
+let unsubscribeFiles = null;
 function listenFiles() {
-  if (unsubscribe) unsubscribe();
-  const q = query(collection(db, "files"), orderBy("createdAt", "desc"));
-  unsubscribe = onSnapshot(q, snap => {
+  if (unsubscribeFiles) unsubscribeFiles();
+  const q = query(collection(db, "files"), orderBy("createdAt", "desc"), limit(50));
+  unsubscribeFiles = onSnapshot(q, snap => {
     const list = document.getElementById("files-list");
     list.innerHTML = "";
     const now = Date.now();
@@ -138,7 +155,7 @@ function listenFiles() {
     snap.forEach(d => {
       const f = d.data();
       if (f.expiresAt <= now) {
-        deleteDoc(doc(db, "files", d.id));   // просрочен — удаляем
+        deleteDoc(doc(db, "files", d.id));
         return;
       }
       const left = Math.ceil((f.expiresAt - now) / 60000);
@@ -165,7 +182,68 @@ function listenFiles() {
   });
 }
 
-/* Автоочистка каждые 30 сек */
+/* ====== Чат: отправка ====== */
+window.sendMessage = async () => {
+  const input = document.getElementById("msg-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const user = auth.currentUser;
+  if (!user) return;
+  const login = user.email.split("@")[0];
+
+  try {
+    await addDoc(collection(db, "messages"), {
+      text,
+      login,
+      createdAt: serverTimestamp()
+    });
+    input.value = "";
+    input.focus();
+  } catch (e) {
+    alert("Ошибка отправки: " + e.message);
+  }
+};
+
+// Enter — отправить
+document.getElementById("msg-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+/* ====== Чат: чтение (последние 100 сообщений) ====== */
+let unsubscribeMsgs = null;
+function listenMessages() {
+  if (unsubscribeMsgs) unsubscribeMsgs();
+  const q = query(collection(db, "messages"), orderBy("createdAt", "asc"), limit(100));
+  unsubscribeMsgs = onSnapshot(q, snap => {
+    const box = document.getElementById("messages");
+    box.innerHTML = "";
+    const myLogin = auth.currentUser.email.split("@")[0];
+
+    snap.forEach(d => {
+      const m = d.data();
+      const time = m.createdAt?.toDate
+        ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+        : '';
+      const div = document.createElement("div");
+      div.className = "msg" + (m.login === myLogin ? " own" : "");
+      div.innerHTML = `
+        <span class="author">${escapeHtml(m.login)}:</span>
+        <span>${escapeHtml(m.text)}</span>
+        <span class="time">${time}</span>
+      `;
+      box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;  // скролл вниз
+  });
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[s]));
+}
+
+/* ====== Автоочистка файлов каждые 30 сек ====== */
 setInterval(() => {
   if (auth.currentUser) listenFiles();
 }, 30000);
