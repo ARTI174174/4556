@@ -110,6 +110,7 @@ input:focus, select:focus { border-color: #3b82f6; }
 
 .msg-input-row { display: flex; gap: 8px; }
 .msg-input-row input { flex: 1; }
+.msg-input-row select { padding: 12px 10px; font-size: 13px; min-width: 90px; }
 
 /* ====== Файлы ====== */
 .files-list {
@@ -142,4 +143,5 @@ input:focus, select:focus { border-color: #3b82f6; }
 @media (max-width: 500px) {
   .card { padding: 24px 18px; margin-top: 30px; }
   h1 { font-size: 26px; }
+  .msg-input-row { flex-wrap: wrap; }
 }
