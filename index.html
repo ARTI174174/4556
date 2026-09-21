@@ -56,10 +56,10 @@
         <button class="btn" onclick="document.getElementById('file-input').click()">📎 Выбрать файлы</button>
         <span id="file-name" class="file-name">Файлы не выбраны</span>
         <select id="ttl">
-          <option value="5">Удалить через 5 мин</option>
-          <option value="10">10 минут</option>
-          <option value="30">30 минут</option>
-          <option value="60" selected>1 час</option>
+          <option value="5">Файлы: 5 мин</option>
+          <option value="10">Файлы: 10 мин</option>
+          <option value="30">Файлы: 30 мин</option>
+          <option value="60" selected>Файлы: 1 час</option>
         </select>
         <button class="btn primary" onclick="uploadFiles()">Загрузить</button>
       </div>
@@ -68,6 +68,12 @@
         <div id="messages" class="messages"></div>
         <div class="msg-input-row">
           <input id="msg-input" type="text" placeholder="Написать сообщение..." maxlength="500" />
+          <select id="msg-ttl" title="Через сколько удалить">
+            <option value="5">5 мин</option>
+            <option value="10">10 мин</option>
+            <option value="30">30 мин</option>
+            <option value="60" selected>1 час</option>
+          </select>
           <button class="btn primary" onclick="sendMessage()">Отправить</button>
         </div>
       </div>
