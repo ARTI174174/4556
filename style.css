@@ -76,6 +76,42 @@ input:focus, select:focus { border-color: #3b82f6; }
 }
 .file-name { color: #94a3b8; font-size: 14px; flex: 1; min-width: 120px; }
 
+/* ====== Чат ====== */
+.chat-box {
+  max-width: 900px;
+  margin: 0 auto 20px;
+  background: #1e293b;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.messages {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+.msg {
+  background: #0f172a;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+.msg .author { color: #3b82f6; font-weight: 600; margin-right: 6px; }
+.msg .time { color: #64748b; font-size: 11px; margin-left: 8px; }
+.msg.own { background: #1d4ed8; }
+.msg.own .author { color: #bfdbfe; }
+
+.msg-input-row { display: flex; gap: 8px; }
+.msg-input-row input { flex: 1; }
+
+/* ====== Файлы ====== */
 .files-list {
   max-width: 900px;
   margin: 0 auto;
