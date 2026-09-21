@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FileShare — обмен файлами</title>
+  <title>FileShare — обмен файлами и чат</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,7 +13,7 @@
     <div id="screen-menu" class="screen active">
       <div class="card center">
         <h1>📁 FileShare</h1>
-        <p class="sub">Простой обмен файлами между устройствами</p>
+        <p class="sub">Обмен файлами и чат</p>
         <button class="btn primary" onclick="showScreen('screen-login')">Войти</button>
         <button class="btn" onclick="showScreen('screen-register')">Регистрация</button>
       </div>
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <!-- ЭКРАН: ЧАТ -->
+    <!-- ЭКРАН: ЧАТ + ФАЙЛЫ -->
     <div id="screen-chat" class="screen">
       <header class="topbar">
         <span>💬 Общий чат</span>
@@ -52,16 +52,24 @@
       </header>
 
       <div class="upload-panel">
-        <input type="file" id="file-input" hidden />
-        <button class="btn" onclick="document.getElementById('file-input').click()">📎 Выбрать файл</button>
-        <span id="file-name" class="file-name">Файл не выбран</span>
+        <input type="file" id="file-input" multiple hidden />
+        <button class="btn" onclick="document.getElementById('file-input').click()">📎 Выбрать файлы</button>
+        <span id="file-name" class="file-name">Файлы не выбраны</span>
         <select id="ttl">
           <option value="5">Удалить через 5 мин</option>
           <option value="10">10 минут</option>
           <option value="30">30 минут</option>
           <option value="60" selected>1 час</option>
         </select>
-        <button class="btn primary" onclick="uploadFile()">Загрузить</button>
+        <button class="btn primary" onclick="uploadFiles()">Загрузить</button>
+      </div>
+
+      <div class="chat-box">
+        <div id="messages" class="messages"></div>
+        <div class="msg-input-row">
+          <input id="msg-input" type="text" placeholder="Написать сообщение..." maxlength="500" />
+          <button class="btn primary" onclick="sendMessage()">Отправить</button>
+        </div>
       </div>
 
       <div id="files-list" class="files-list"></div>
@@ -69,7 +77,6 @@
 
   </div>
 
-  <!-- Firebase SDK -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
